@@ -1,18 +1,19 @@
 package routes
 
 import (
-	"fmt"
 	"net/http"
 )
 
 func NewRouter() http.Handler {
-	mux := http.NewServeMux()
+	router := http.NewServeMux()
 
-	mux.HandleFunc("/", indexHandler)
+	router.HandleFunc("/", indexHandler)
 
-	return mux
+	return router
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Welcome to Terminal RPG!")
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Welcome to TerminalRPG!"))
 }
