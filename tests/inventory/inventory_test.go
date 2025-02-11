@@ -43,7 +43,7 @@ func TestAddItem(t *testing.T) {
 
 	ok3 := inv.AddItem("00", 0)
 	if ok3 {
-		t.Errorf("should not allow adding items of quantity  equal to zero")
+		t.Errorf("should not allow adding items of quantity equal to zero")
 	}
 
 	ok4 := inv.AddItem("00", -1)
@@ -104,6 +104,16 @@ func TestRemoveItem(t *testing.T) {
 	expectedNumItems2 := 10
 	if resultNumItems2 != expectedNumItems2 {
 		t.Errorf("number of items with code does not match: got %v want %v", resultNumItems2, expectedNumItems2)
+	}
+
+	ok5 := inv.AddItem("01", 0)
+	if ok5 {
+		t.Errorf("should not allow removing items of quantity equal to zero")
+	}
+
+	ok6 := inv.RemoveItem("01", -1)
+	if ok6 {
+		t.Errorf("should not allow removing items of quantity less than to zero")
 	}
 }
 
