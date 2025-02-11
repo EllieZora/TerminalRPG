@@ -1,66 +1,100 @@
 package inventory
 
 import (
-	"errors"
 	"fmt"
-
-	"github.com/google/uuid"
-
-	"github.com/EllieZora/TerminalRPG/internal/item"
 )
 
 type Inventory struct {
-	Limit    int
-	Contents map[uuid.UUID]item.Item
+	limit  int
+	stacks map[string][]int
 }
 
-func (inv *Inventory) GetItem(category, name string) *item.Item {
-	for _, val := range inv.Contents {
-		p := &val
-		if p.GetCategory() != category || p.GetName() != name {
-			continue
+func NewInventory(limit int) Inventory {
+	return Inventory{limit: limit, stacks: make(map[string][]int, limit)}
+}
+
+func (inv *Inventory) GetNumItem(code string) int {
+	stacks, ok := inv.stacks[code]
+	if !ok {
+		return 0
+	}
+
+	numItems := 0
+	for _, num := range stacks {
+		numItems += num
+	}
+	return numItems
+}
+
+func (inv *Inventory) AddItem(code string, quantity int) bool {
+	if quantity <= 0 {
+		return false
+	}
+
+	stacks, ok := inv.stacks[code]
+	if ok {
+		// TODO - add max stack quantity
+		stacks[0] += quantity
+		return true
+	} else if !inv.isFull() {
+		inv.stacks[code] = []int{quantity}
+		return true
+	}
+	return false
+}
+
+func (inv *Inventory) RemoveItem(code string, quantity int) bool {
+	if quantity <= 0 {
+		return false
+	}
+
+	updatedStacks, ok := inv.stacks[code]
+	if !ok || len(updatedStacks) == 0 {
+		return false
+	}
+
+	remaining := quantity
+	for i := len(updatedStacks) - 1; i >= 0; i-- {
+		if updatedStacks[i] > remaining {
+			updatedStacks[i] -= remaining
+			inv.stacks[code] = updatedStacks
+			return true
+		} else {
+			remaining -= updatedStacks[i]
+			updatedStacks = updatedStacks[:len(updatedStacks)-1]
+			if remaining == 0 && len(updatedStacks) == 0 {
+				delete(inv.stacks, code)
+				return true
+			} else if remaining == 0 {
+				inv.stacks[code] = updatedStacks
+				return true
+			} else if len(updatedStacks) == 0 {
+				return false
+			}
 		}
-		return p
 	}
-	return nil
+	return true
 }
 
-func (inv *Inventory) AddItem(i *item.Item) error {
-	existingItem := inv.GetItem(i.GetCategory(), i.GetName())
-	if existingItem != nil {
-		fmt.Println(existingItem)
-		existingItem.SetQuantity(existingItem.GetQuantity() + i.GetQuantity())
-		fmt.Println(existingItem)
-	} else if len(inv.Contents) < inv.Limit {
-		newItem := i.Clone()
-		inv.Contents[newItem.Id] = newItem
-	} else {
-		return errors.New("inventory is full")
-	}
-
-	return nil
-}
-
-func (inv *Inventory) RemoveItem(category, name string, quantity int) error {
-	existingItem := inv.GetItem(category, name)
-	if existingItem != nil && existingItem.GetQuantity() >= quantity {
-		existingItem.SetQuantity(existingItem.GetQuantity() - quantity)
-		return nil
-	}
-
-	return errors.New("not enough items in inventory")
-}
-
-func (inv Inventory) Print() string {
-	if len(inv.Contents) == 0 {
+func (inv *Inventory) Print() string {
+	if len(inv.stacks) == 0 {
 		return "Your inventory is empty."
 	}
 
 	invDescription := "You have:\n"
 
-	for _, v := range inv.Contents {
-		invDescription += v.Print()
+	for code, stack := range inv.stacks {
+		invDescription += fmt.Sprintf("%v stack(s) of item %v\n", len(stack), code)
 	}
 
 	return invDescription
+}
+
+func (inv *Inventory) isFull() bool {
+	currentItems := 0
+	for _, stacks := range inv.stacks {
+		currentItems += len(stacks)
+	}
+
+	return currentItems >= inv.limit
 }
