@@ -2,6 +2,8 @@ package inventory
 
 import (
 	"fmt"
+
+	"github.com/EllieZora/TerminalRPG/internal/item"
 )
 
 type Inventory struct {
@@ -76,7 +78,7 @@ func (inv *Inventory) RemoveItem(code string, quantity int) bool {
 	return true
 }
 
-func (inv *Inventory) Print() string {
+func (inv *Inventory) Print(store *item.Store) string {
 	if len(inv.stacks) == 0 {
 		return "Your inventory is empty."
 	}
@@ -84,7 +86,11 @@ func (inv *Inventory) Print() string {
 	invDescription := "You have:\n"
 
 	for code, stack := range inv.stacks {
-		invDescription += fmt.Sprintf("%v stack(s) of item %v\n", len(stack), code)
+		i, ok := store.GetItem(code)
+		if !ok {
+			continue
+		}
+		invDescription += fmt.Sprintf("%v stack(s) of %v\n", len(stack), i.String())
 	}
 
 	return invDescription
