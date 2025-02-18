@@ -120,11 +120,10 @@ func TestRemoveItem(t *testing.T) {
 
 func TestPrint(t *testing.T) {
 	inv := inventory.NewInventory(2)
-	store := item.NewStore([]item.Item{
-		{Code: "00", Category: "Cat 0", Name: "Item 0", Description: "test 0"},
-		{Code: "01", Category: "Cat 1", Name: "Item 1", Description: "test 1"},
-		{Code: "02", Category: "Cat 2", Name: "Item 2", Description: "test 2"},
-	})
+	item0 := item.Item{Code: "00", Category: "Cat 0", Name: "Item 0", Description: "test 0"}
+	item1 := item.Item{Code: "01", Category: "Cat 1", Name: "Item 1", Description: "test 1"}
+	item2 := item.Item{Code: "02", Category: "Cat 2", Name: "Item 2", Description: "test 2"}
+	store := item.NewStore([]*item.Item{&item0, &item1, &item2})
 
 	resultPrint0 := inv.Print(&store)
 	expectedPrint0 := "Your inventory is empty."

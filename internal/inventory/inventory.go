@@ -7,25 +7,25 @@ import (
 )
 
 type Inventory struct {
-	limit  int
-	stacks map[string][]int
+	maxSlots int
+	items    map[string]*itemStack
 }
 
-func NewInventory(limit int) Inventory {
-	return Inventory{limit: limit, stacks: make(map[string][]int, limit)}
+type itemStack struct {
+	slotsUsed, quantity int
+}
+
+func NewInventory(numSlots int) Inventory {
+	return Inventory{maxSlots: numSlots, items: make(map[string]*itemStack, numSlots)}
 }
 
 func (inv *Inventory) GetNumItem(code string) int {
-	stacks, ok := inv.stacks[code]
+	stack, ok := inv.items[code]
 	if !ok {
 		return 0
 	}
 
-	numItems := 0
-	for _, num := range stacks {
-		numItems += num
-	}
-	return numItems
+	return stack.quantity
 }
 
 func (inv *Inventory) AddItem(code string, quantity int) bool {
@@ -33,15 +33,16 @@ func (inv *Inventory) AddItem(code string, quantity int) bool {
 		return false
 	}
 
-	stacks, ok := inv.stacks[code]
+	stack, ok := inv.items[code]
 	if ok {
-		// TODO - add max stack quantity
-		stacks[0] += quantity
+		// TODO - adjust slots used if quantity exceeds stack size
+		stack.quantity += quantity
 		return true
 	} else if !inv.isFull() {
-		inv.stacks[code] = []int{quantity}
+		inv.items[code] = &itemStack{slotsUsed: 1, quantity: quantity}
 		return true
 	}
+
 	return false
 }
 
@@ -50,57 +51,44 @@ func (inv *Inventory) RemoveItem(code string, quantity int) bool {
 		return false
 	}
 
-	updatedStacks, ok := inv.stacks[code]
-	if !ok || len(updatedStacks) == 0 {
+	stack, ok := inv.items[code]
+	if !ok || stack.slotsUsed == 0 || stack.quantity < quantity {
 		return false
 	}
 
-	remaining := quantity
-	for i := len(updatedStacks) - 1; i >= 0; i-- {
-		if updatedStacks[i] > remaining {
-			updatedStacks[i] -= remaining
-			inv.stacks[code] = updatedStacks
-			return true
-		} else {
-			remaining -= updatedStacks[i]
-			updatedStacks = updatedStacks[:len(updatedStacks)-1]
-			if remaining == 0 && len(updatedStacks) == 0 {
-				delete(inv.stacks, code)
-				return true
-			} else if remaining == 0 {
-				inv.stacks[code] = updatedStacks
-				return true
-			} else if len(updatedStacks) == 0 {
-				return false
-			}
-		}
+	if stack.quantity == quantity {
+		delete(inv.items, code)
+	} else {
+		stack.quantity -= quantity
 	}
+
 	return true
 }
 
 func (inv *Inventory) Print(store *item.Store) string {
-	if len(inv.stacks) == 0 {
+	if len(inv.items) == 0 {
 		return "Your inventory is empty."
 	}
 
 	invDescription := "You have:\n"
 
-	for code, stack := range inv.stacks {
+	for code := range inv.items {
 		i, ok := store.GetItem(code)
 		if !ok {
 			continue
 		}
-		invDescription += fmt.Sprintf("%v stack(s) of %v\n", len(stack), i.String())
+		// TODO - adjust num stacks when stack size is implemented
+		invDescription += fmt.Sprintf("%v stack(s) of %v\n", 1, i.String())
 	}
 
 	return invDescription
 }
 
 func (inv *Inventory) isFull() bool {
-	currentItems := 0
-	for _, stacks := range inv.stacks {
-		currentItems += len(stacks)
+	currentSlots := 0
+	for _, stack := range inv.items {
+		currentSlots += stack.slotsUsed
 	}
 
-	return currentItems >= inv.limit
+	return currentSlots >= inv.maxSlots
 }
