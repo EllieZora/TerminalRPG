@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/EllieZora/TerminalRPG/internal/inventory"
+	"github.com/EllieZora/TerminalRPG/internal/item"
 )
 
 func TestGetNumItem(t *testing.T) {
@@ -119,8 +120,12 @@ func TestRemoveItem(t *testing.T) {
 
 func TestPrint(t *testing.T) {
 	inv := inventory.NewInventory(2)
+	item0 := item.Item{Code: "00", Category: "Cat 0", Name: "Item 0", Description: "test 0"}
+	item1 := item.Item{Code: "01", Category: "Cat 1", Name: "Item 1", Description: "test 1"}
+	item2 := item.Item{Code: "02", Category: "Cat 2", Name: "Item 2", Description: "test 2"}
+	store := item.NewStore([]*item.Item{&item0, &item1, &item2})
 
-	resultPrint0 := inv.Print()
+	resultPrint0 := inv.Print(&store)
 	expectedPrint0 := "Your inventory is empty."
 	if resultPrint0 != expectedPrint0 {
 		t.Errorf("inventory print does not match: got %v want %v", resultPrint0, expectedPrint0)
@@ -129,8 +134,11 @@ func TestPrint(t *testing.T) {
 	inv.AddItem("00", 5)
 	inv.AddItem("01", 10)
 
-	resultPrint1 := inv.Print()
-	expectedPrint1 := "You have:\n" + "1 stack(s) of item 00\n" + "1 stack(s) of item 01\n"
+	item00, _ := store.GetItem("00")
+	item01, _ := store.GetItem("01")
+
+	resultPrint1 := inv.Print(&store)
+	expectedPrint1 := "You have:\n" + "1 stack(s) of " + item00.String() + "\n" + "1 stack(s) of " + item01.String() + "\n"
 	if resultPrint1 != expectedPrint1 {
 		t.Errorf("inventory print does not match: got %v want %v", resultPrint1, expectedPrint1)
 	}
